@@ -6,7 +6,7 @@ import jwt
 from datetime import datetime, timedelta, timezone
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-import api.models.users as amu
+import project.app.api.models.users as amu
 
 SECRET_KEY = "my_secret_key"
 ALGORITHM = "HS256"
@@ -66,7 +66,7 @@ def authenticate_user(fake_db, username: str, password: str):
       return False
    if not verify_password(password, user.hashed_password):
       return False
-   return True
+   return user
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
    credentials_exception = HTTPException(
