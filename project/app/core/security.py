@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import project.app.api.models.users as amu
+from project.app.db import fake_users_db
 
 SECRET_KEY = "my_secret_key"
 ALGORITHM = "HS256"
@@ -17,16 +18,16 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 # Перенести в файл db.py?
 # ---------------------------
-fake_users_db = {
-    "johndoe": {
-        "username": "johndoe",
-        "full_name": "John Doe",
-        "email": "johndoe@example.com",
-        "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
-        "disabled": False,
-    }
-}
-# ---------------------------
+# fake_users_db = {
+#     "johndoe": {
+#         "username": "johndoe",
+#         "full_name": "John Doe",
+#         "email": "johndoe@example.com",
+#         "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
+#         "disabled": False,
+#     }
+# }
+# # ---------------------------
 
 def create_jwt_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()

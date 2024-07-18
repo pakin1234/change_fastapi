@@ -1,17 +1,19 @@
 from typing import Annotated
 
-from fastapi import FastAPI, Depends, APIRouter, HTTPException, status
+from fastapi import FastAPI, Depends, APIRouter, HTTPException, status, Body
 from fastapi.security import OAuth2PasswordRequestForm
-from project.app.api.models.users import Token
-from project.app.core.security import authenticate_user, fake_users_db, TIME_EXPIRATION, create_jwt_token
+from project.app.api.models.users import Token, UserInDB, User
+from project.app.core.security import authenticate_user, TIME_EXPIRATION, create_jwt_token
+from project.app.db import fake_users_db
 from datetime import timedelta
+import bcrypt
 
 user_router = APIRouter()
 
 @user_router.post("/login")
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
-) -> Token:
+    ) -> Token:
     user = authenticate_user(fake_users_db, form_data.username, form_data.password)
     print(user)
     if not user:
@@ -26,3 +28,18 @@ async def login_for_access_token(
         expires_delta=access_token_expires
     )
     return Token(access_token=access_token, type_token="bearer")
+
+
+@user_router.post("/register")
+async def register_user(
+    user: User, password: Annotated[str, Body()]
+    ):
+    if user.username in fake_users_db:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already registered"
+            )
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    fake_users_db[user.username] = UserInDB(username=user.username, email=user.email, full_name=user.full_name, hashed_password=hashed_password, disabled=user.disabled).model_dump()
+    print(fake_users_db)
+    return {"data": "added successfully"}
