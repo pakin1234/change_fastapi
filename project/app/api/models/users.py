@@ -14,6 +14,6 @@ class User(BaseModel):
    disabled: bool | None = None
 
 class UserInDB(User):
-   hashed_password: str
+   hashed_password: bytes
 
 

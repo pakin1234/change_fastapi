@@ -1,21 +1,21 @@
 from typing import Annotated
 
-from fastapi import FastAPI, Depends, APIRouter, HTTPException, status, Body
+from fastapi import Depends, APIRouter, HTTPException, status, Body
 from fastapi.security import OAuth2PasswordRequestForm
 from project.app.api.models.users import Token, UserInDB, User
-from project.app.core.security import authenticate_user, TIME_EXPIRATION, create_jwt_token
+from project.app.core.security import authenticate_user, TIME_EXPIRATION, create_jwt_token, get_password_hash
 from project.app.db import fake_users_db
 from datetime import timedelta
 import bcrypt
 
 user_router = APIRouter()
 
-@user_router.post("/login")
+@user_router.post("/login", response_model=Token)
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
-    ) -> Token:
+    ):
     user = authenticate_user(fake_users_db, form_data.username, form_data.password)
-    print(user)
+    # print(user)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -27,7 +27,8 @@ async def login_for_access_token(
         data={"sub": user.username},
         expires_delta=access_token_expires
     )
-    return Token(access_token=access_token, type_token="bearer")
+    # return Token(access_token=access_token, type_token="bearer")
+    return {"access_token": access_token, "type_token": "bearer"}
 
 
 @user_router.post("/register")
@@ -39,7 +40,7 @@ async def register_user(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username already registered"
             )
-    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-    fake_users_db[user.username] = UserInDB(username=user.username, email=user.email, full_name=user.full_name, hashed_password=hashed_password, disabled=user.disabled).model_dump()
+    hashed_password = get_password_hash(password=password)
+    fake_users_db[user.username] = UserInDB(**user.model_dump(), hashed_password=hashed_password).model_dump()
     print(fake_users_db)
     return {"data": "added successfully"}
