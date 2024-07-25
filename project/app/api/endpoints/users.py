@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import Depends, APIRouter, HTTPException, status, Body
 from fastapi.security import OAuth2PasswordRequestForm
 from project.app.api.models.users import Token, UserInDB, User
-from project.app.core.security import authenticate_user, TIME_EXPIRATION, create_jwt_token, get_password_hash
+from project.app.core.security import authenticate_user, config, create_jwt_token, get_password_hash
 from project.app.db import fake_users_db
 from datetime import timedelta
 import bcrypt
@@ -15,7 +15,6 @@ async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
     ):
     user = authenticate_user(fake_users_db, form_data.username, form_data.password)
-    # print(user)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -27,7 +26,6 @@ async def login_for_access_token(
         data={"sub": user.username},
         expires_delta=access_token_expires
     )
-    # return Token(access_token=access_token, type_token="bearer")
     return {"access_token": access_token, "type_token": "bearer"}
 
 

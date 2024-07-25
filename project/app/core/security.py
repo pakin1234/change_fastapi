@@ -2,6 +2,8 @@ from pydantic import BaseModel
 from typing import Annotated
 from fastapi import Depends, HTTPException, status
 
+from environs import Env
+
 import jwt
 import bcrypt
 from datetime import datetime, timedelta, timezone
@@ -10,9 +12,24 @@ import project.app.api.models.users as amu
 from project.app.db import fake_users_db
 from project.app.api.models.users import User
 
-SECRET_KEY = "my_secret_key"
-ALGORITHM = "HS256"
-TIME_EXPIRATION = timedelta(minutes=30)
+
+class Config(BaseModel):
+   secret_key: str
+   algorithm: str
+   access_token_expire_minutes: int
+
+
+def load_config_from_env():
+   env = Env()
+   env.read_env()
+
+   return Config(
+      secret_key=env.str("SECRET_KEY"),
+      algorithm=env.str("ALGORITHM"),
+      access_token_expire_minutes=env("TIME_EXPIRATION")
+   )
+
+config = load_config_from_env()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
@@ -24,7 +41,7 @@ def create_jwt_token(data: dict, expires_delta: timedelta | None = None):
     else:
        expire += timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, config.secret_key, algorithm=config.algorithm)
     return encoded_jwt
 
 def verify_password(plain_password, hashed_password):
@@ -56,7 +73,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
       detail="No validate credentials", 
       headers={"WWW-Authenticate": "Bearer"},)
    try:
-     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+     payload = jwt.decode(token, config.secret_key, algorithms=[config.algorithm])
      username: str = payload.get("sub")
      if username is None:
         raise credentials_exception

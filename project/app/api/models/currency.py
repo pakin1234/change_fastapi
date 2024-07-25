@@ -1,12 +1,14 @@
 from pydantic import BaseModel
 
 class ExchangeRequest(BaseModel):
-    from_currency: str
     to_currency: str
+    from_currency: str
+    amount: float
 
 class ExchangeResponse(BaseModel):
-    from_currency: str
-    to_currency: str
     rate: str
+
+class ListOfAcceptedCurrencies(BaseModel):
+    currencies: list
 
 
